@@ -84,7 +84,8 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-    restart: unless-stopped
+    # Como la web: se prende con `docker compose up -d` y no revive sola tras un reinicio.
+    restart: "no"
 
 networks:
   edge:
