@@ -18,9 +18,10 @@ Reglas de comunicación:
   y diseño**, que son las que ella sí puede decidir.
 - Después de cada cambio, decile **dónde mirarlo** y qué va a ver distinto. La URL
   que se le pasa es **https://dev.thebrideclub.com.ar** (nunca la del puerto
-  3005: ese puerto viene filtrado desde afuera). Los cambios NO llegan solos a
-  **https://thebrideclub.com.ar**, que es producción: se publican aparte, con un
-  **pase a producción** (ver abajo). Lo pueden pedir Valen o Lautaro.
+  3005: ese puerto viene filtrado desde afuera). **Antes de pasársela, fijate que
+  esa página esté prendida** (ver "Cómo se corre"): no vuelve sola. Los cambios NO
+  llegan solos a **https://thebrideclub.com.ar**, que es producción: se publican
+  aparte, con un **pase a producción** (ver abajo). Lo pueden pedir Valen o Lautaro.
 
 ## Pase a producción
 
@@ -32,20 +33,20 @@ terminar, decile en una línea que ya está en https://thebrideclub.com.ar.
 
 1. Commitear lo pendiente en `develop` (commits temáticos, sin prefijo) y
    `git push origin develop`.
+Producción corre en **Vercel** con la base en **Neon** (desde el 2026-11-16); este
+server queda solo para dev. Vercel publica solo cada push a `main`: no hay imagen ni
+contenedor de prod que tocar.
+
 2. **Revisar cambios de base**: `git diff main develop -- src/lib/db.ts`. El
    `CREATE TABLE IF NOT EXISTS` no altera tablas existentes: cualquier columna
-   nueva o renombrada se aplica a mano en `thebrideclub-prod-db` **antes** de levantar la
-   imagen nueva.
+   nueva o renombrada se aplica a mano en la base de Neon (SQL Editor de la consola)
+   **antes** del push a `main`. Si hay una, avisale a Lautaro antes de seguir.
 3. Avanzar `main` sin tocar el working copy (el dev server corre de acá):
    `git fetch . develop:main && git push origin main`. Es fast-forward: `main` no
    tiene commits propios. Si alguna vez no lo es, parar y avisarle a Lautaro.
-4. Buildear con el working copy limpio (HEAD == `main`, así el label no miente):
-   `docker build --target runner -t thebrideclub-prod:<AAAA-MM-DD>-<sha corto> --label
-   "org.opencontainers.image.revision=$(git rev-parse HEAD)" .`
-5. Poner ese tag en `APP_VERSION` de `~/prod/thebrideclub/.env` y `docker compose up -d`
-   en `~/prod/thebrideclub`. Anotar el tag anterior: el rollback es volver a ponerlo.
-6. Verificar: las páginas en 200 en https://thebrideclub.com.ar, que el formulario
-   guarde y que `/consultas` siga pidiendo clave.
+4. Esperar el deploy de Vercel (un par de minutos) y verificar: las páginas en 200 en
+   https://thebrideclub.com.ar, que el formulario guarde y que `/consultas` siga
+   pidiendo clave. Rollback: en Vercel, "Instant Rollback" al deploy anterior.
 
 ## Qué es
 
@@ -68,6 +69,13 @@ docker compose exec web npm run lint   # cualquier comando de npm va acá adentr
 
 El dev server tiene hot reload: editar un archivo se refleja solo, no hace falta
 reiniciar nada.
+
+**El dev no queda prendido solo.** Desde el 2026-11-16 el servicio `web` tiene
+`restart: "no"` para que el dev server no se coma la memoria del server: después de
+un reinicio del VPS o si se cae, queda abajo. Antes de pasarle la URL a Valen,
+comprobá que https://dev.thebrideclub.com.ar responda 200; si no, levantalo con
+`docker compose up -d --build` (si hay que armar la imagen tarda unos minutos) y
+esperá a que responda. Dejalo prendido al terminar: ella entra a mirar después.
 
 ## Convenciones
 
