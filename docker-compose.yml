@@ -28,7 +28,7 @@ services:
     container_name: thebrideclub-web
     # Tope de RAM (2026-10-13): el dev server de Turbopack acumula cache y no la
     # libera; sin tope llego a 1.8 GB en 5 dias. Sin swap extra para que no lo
-    # esquive paginando. Si lo supera, el kernel lo mata y `restart` lo levanta.
+    # esquive paginando. Si lo supera, el kernel lo mata y queda caido.
     mem_limit: 1g
     memswap_limit: 1g
     environment:
@@ -61,7 +61,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    # Dev se prende a mano para trabajar y se apaga al terminar: no revive solo ni con el server.
+    restart: "no"
 
   db:
     image: postgres:17-alpine
